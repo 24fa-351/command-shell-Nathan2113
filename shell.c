@@ -132,14 +132,14 @@ void handle_input_redirection(char* command, char* input_file) {
 void handle_piping(char* commands[], int num_commands, char* output_file) {
     int pipe_fds[2 * (num_commands - 1)];
 
-    for (int i = 0; i < num_commands - 1; i++) {
-        if (pipe(pipe_fds + i * 2) == -1) {
+    for (int ix = 0; ix < num_commands - 1; ix++) {
+        if (pipe(pipe_fds + ix * 2) == -1) {
             perror("pipe");
             exit(1);
         }
     }
 
-    for (int i = 0; i < num_commands; i++) {
+    for (int ix = 0; ix < num_commands; ix++) {
         int pid = fork();
         if (pid == -1) {
             perror("fork");
@@ -147,14 +147,14 @@ void handle_piping(char* commands[], int num_commands, char* output_file) {
         }
 
         if (pid == 0) {
-            if (i > 0) {
-                if (dup2(pipe_fds[(i - 1) * 2], STDIN_FILENO) == -1) {
+            if (ix > 0) {
+                if (dup2(pipe_fds[(ix - 1) * 2], STDIN_FILENO) == -1) {
                     perror("dup2");
                     exit(1);
                 }
             }
-            if (i < num_commands - 1) {
-                if (dup2(pipe_fds[i * 2 + 1], STDOUT_FILENO) == -1) {
+            if (ix < num_commands - 1) {
+                if (dup2(pipe_fds[ix * 2 + 1], STDOUT_FILENO) == -1) {
                     perror("dup2");
                     exit(1);
                 }
@@ -171,12 +171,12 @@ void handle_piping(char* commands[], int num_commands, char* output_file) {
                 close(output_fd);
             }
 
-            for (int j = 0; j < 2 * (num_commands - 1); j++) {
-                close(pipe_fds[j]);
+            for (int jx = 0; jx < 2 * (num_commands - 1); jx++) {
+                close(pipe_fds[jx]);
             }
 
             char* words[1000];
-            split(commands[i], words, ' ');
+            split(commands[ix], words, ' ');
             execute_command(words[0], words);
             exit(0);
         }
@@ -186,7 +186,7 @@ void handle_piping(char* commands[], int num_commands, char* output_file) {
         close(pipe_fds[ix]);
     }
 
-    for (int i = 0; i < num_commands; i++) {
+    for (int ix = 0; ix < num_commands; ix++) {
         wait(NULL);
     }
 }
@@ -222,7 +222,7 @@ void handle_unset(char* var) {
 
 void expand_variables(char* command) {
     char expanded[MAX_LINE];
-    int ix = 0, j = 0;
+    int ix = 0, jx = 0;
 
     while (command[ix] != '\0') {
         if (command[ix] == '$') {
@@ -238,14 +238,14 @@ void expand_variables(char* command) {
             char* var_value = getenv(var_name);
             if (var_value != NULL) {
                 while (*var_value != '\0') {
-                    expanded[j++] = *var_value++;
+                    expanded[jx++] = *var_value++;
                 }
             }
         } else {
-            expanded[j++] = command[ix++];
+            expanded[jx++] = command[ix++];
         }
     }
-    expanded[j] = '\0';
+    expanded[jx] = '\0';
     strcpy(command, expanded);
 }
 

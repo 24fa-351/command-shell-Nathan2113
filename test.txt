@@ -1,7 +1,7 @@
-total 92
+total 80
 -rw-r--r-- 1 nathan nathan   518 Dec  8 18:50 Makefile
 -rw-r--r-- 1 nathan nathan     5 Dec  8 17:19 sample_input.txt
--rwxr-xr-x 1 nathan nathan 29416 Dec  8 18:50 shell
--rw-r--r-- 1 nathan nathan 22652 Dec  8 18:49 shell.c
--rw-r--r-- 1 nathan nathan 25592 Dec  8 18:50 shell.o
--rw------- 1 nathan nathan     0 Dec  8 18:51 test.txt
+-rwxr-xr-x 1 nathan nathan 29416 Dec  8 18:54 shell
+-rw-r--r-- 1 nathan nathan  8396 Dec  8 18:54 shell.c
+-rw-r--r-- 1 nathan nathan 25592 Dec  8 18:54 shell.o
+-rw------- 1 nathan nathan     0 Dec  8 18:55 test.txt
