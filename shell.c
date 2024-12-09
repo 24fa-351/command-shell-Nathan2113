@@ -8,7 +8,6 @@
 #include <ctype.h>
 
 #define MAX_LINE 1000
-#define COMMAND_SEPARATOR "|"
 #define READ_SIDE 0
 #define WRITE_SIDE 1
 
@@ -77,7 +76,7 @@ void execute_command(char* cmd, char* args[]) {
     exit(1);
 }
 
-void handle_redirection(char* command, char* output_file) {
+void handle_output_redirection(char* command, char* output_file) {
     int output_fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (output_fd == -1) {
         perror("open");
@@ -110,6 +109,75 @@ void handle_redirection(char* command, char* output_file) {
     close(output_fd);
     wait(NULL);
 }
+
+void handle_input_redirection(char* command, char* input_file) {
+    // Open the input file in read-only mode
+    int input_fd = open(input_file, O_RDONLY);
+    if (input_fd == -1) {
+        perror("open");
+        exit(1);
+    }
+
+    // Fork a child process
+    int pid = fork();
+    if (pid == -1) {
+        perror("fork");
+        exit(1);
+    }
+
+    if (pid == 0) {
+        // Redirect stdin to the input file
+        if (dup2(input_fd, STDIN_FILENO) == -1) {
+            perror("dup2");
+            exit(1);
+        }
+        close(input_fd);
+
+        // Split the command into words and execute it
+        char* words[1000];
+        split(command, words, ' ');
+        execute_command(words[0], words);
+
+        // Free allocated memory for words
+        for (int i = 0; words[i] != NULL; i++) {
+            free(words[i]);
+        }
+
+        exit(0); // Ensure child process exits after execution
+    }
+
+    // Close the file descriptor in the parent process
+    close(input_fd);
+
+    // Wait for the child process to finish
+    wait(NULL);
+}
+
+// void handle_input_redirection(char* line) {
+//     // Check for input redirection '<'
+//     char* input_file = NULL;
+//     if (strstr(line, " < ")) {
+//         char* token = strtok(line, " < ");
+//         input_file = strtok(NULL, " < ");
+//         // Remove any extra spaces around the input file name
+//         while (*input_file == ' ') input_file++;
+//         line[strlen(line) - strlen(input_file) - 3] = '\0'; // Remove '<' and the file name
+
+//         // Open the input file
+//         int input_fd = open(input_file, O_RDONLY);
+//         if (input_fd == -1) {
+//             perror("Failed to open input file");
+//             exit(1);
+//         }
+
+//         // Redirect stdin to the input file
+//         if (dup2(input_fd, STDIN_FILENO) == -1) {
+//             perror("Failed to redirect stdin");
+//             exit(1);
+//         }
+//         close(input_fd);
+//     }
+// }
 
 void handle_piping(char* commands[], int num_commands) {
     int pipe_fds[2 * (num_commands - 1)];
@@ -269,8 +337,17 @@ int main(int argc, char *argv[]) {
 
         char* commands[1000];
 
-        // Check for output redirection '>'
-        if (strstr(line, " > ")) {
+        if (strstr(line, " < ")) {
+            char* token = strtok(line, " < ");
+            commands[0] = token;
+            token = strtok(NULL, " < ");
+            char* input_file = token;
+
+            // Remove any extra spaces around the input file name
+            while (*input_file == ' ') input_file++;
+
+            handle_input_redirection(commands[0], input_file);
+        } else if (strstr(line, " > ")) {
             char* token = strtok(line, " > ");
             commands[0] = token;
             token = strtok(NULL, " > ");
@@ -279,7 +356,7 @@ int main(int argc, char *argv[]) {
             // Remove any extra spaces around the output file name
             while (*output_file == ' ') output_file++;
 
-            handle_redirection(commands[0], output_file);
+            handle_output_redirection(commands[0], output_file);
         } else {
             split(line, commands, '|');
 
