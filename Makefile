@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wall -g -I.
 
 # Source files
-SRCS = shell.c
+SRCS = shell.c command_handler.c io_operations.c utils.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)

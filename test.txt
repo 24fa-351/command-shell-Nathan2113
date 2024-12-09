@@ -1,7 +1,16 @@
-total 80
--rw-r--r-- 1 nathan nathan   518 Dec  8 18:50 Makefile
+total 120
+-rw-r--r-- 1 nathan nathan   560 Dec  8 19:02 Makefile
+-rw-r--r-- 1 nathan nathan  3174 Dec  8 19:00 command_handler.c
+-rw-r--r-- 1 nathan nathan   274 Dec  8 19:03 command_handler.h
+-rw-r--r-- 1 nathan nathan 14568 Dec  8 19:03 command_handler.o
+-rw-r--r-- 1 nathan nathan  3125 Dec  8 19:01 io_operations.c
+-rw-r--r-- 1 nathan nathan   301 Dec  8 19:02 io_operations.h
+-rw-r--r-- 1 nathan nathan 11000 Dec  8 19:03 io_operations.o
 -rw-r--r-- 1 nathan nathan     5 Dec  8 17:19 sample_input.txt
--rwxr-xr-x 1 nathan nathan 29416 Dec  8 18:54 shell
--rw-r--r-- 1 nathan nathan  8396 Dec  8 18:54 shell.c
--rw-r--r-- 1 nathan nathan 25592 Dec  8 18:54 shell.o
--rw------- 1 nathan nathan     0 Dec  8 18:55 test.txt
+-rwxr-xr-x 1 nathan nathan 33040 Dec  8 19:05 shell
+-rw-r--r-- 1 nathan nathan   507 Dec  8 19:03 shell.c
+-rw-r--r-- 1 nathan nathan  7464 Dec  8 19:04 shell.o
+-rw------- 1 nathan nathan     0 Dec  8 19:07 test.txt
+-rw-r--r-- 1 nathan nathan  1879 Dec  8 19:05 utils.c
+-rw-r--r-- 1 nathan nathan   281 Dec  8 19:04 utils.h
+-rw-r--r-- 1 nathan nathan 10624 Dec  8 19:05 utils.o
