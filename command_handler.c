@@ -27,13 +27,13 @@ void handle_cd(char* path) {
 
 void handle_set(char* var, char* value) {
     if (setenv(var, value, 1) != 0) {
-        perror("setenv");
+        perror("setenv failed");
     }
 }
 
 void handle_unset(char* var) {
     if (unsetenv(var) != 0) {
-        perror("unsetenv");
+        perror("unsetenv failed");
     }
 }
 
@@ -69,6 +69,7 @@ void expand_variables(char* command) {
 void handle_command(char* line) {
     char* commands[1000];
 
+    // Handle 'set' command
     if (strncmp(line, "set ", 4) == 0) {
         char* var_name = line + 4;
         char* var_value = strchr(var_name, ' ');
@@ -80,26 +81,30 @@ void handle_command(char* line) {
         return;
     }
 
+    // Handle 'unset' command
     if (strncmp(line, "unset ", 6) == 0) {
         char* var_name = line + 6;
         handle_unset(var_name);
         return;
     }
 
+    // Handle 'cd' command
     if (strncmp(line, "cd ", 3) == 0) {
         char* path = line + 3;
         handle_cd(path);
         return;
     }
 
+    // Handle background process command
     int background = 0;
     if (line[strlen(line) - 1] == '&') {
         background = 1;
-        line[strlen(line) - 1] = '\0';
+        line[strlen(line) - 1] = '\0'; // Remove the '&' character
     }
 
     expand_variables(line);
 
+    // Handle input redirection
     if (strstr(line, " < ")) {
         char* token = strtok(line, " < ");
         commands[0] = token;
@@ -110,23 +115,49 @@ void handle_command(char* line) {
         return;
     }
 
-    if (strstr(line, " > ")) {
-        handle_output_redirection(line);
-        return;
-    }
+    char* output_file = strstr(line, " > ");
+    char* pipe_start = strstr(line, " | ");
+    
+    // Handle output redirection
+    if (output_file) {
+        *output_file = '\0';
+        output_file += 3;    
+        while (*output_file == ' ') output_file++; 
 
-    if (strstr(line, " | ")) {
-        split(line, commands, '|');
-        int num_commands = 0;
-        while (commands[num_commands] != NULL) {
-            num_commands++;
+        split(line, commands, ' '); 
+
+        // If piping exists, handle it separately
+        if (pipe_start) {
+            split(line, commands, '|');
+            int num_commands = 0;
+            while (commands[num_commands] != NULL) {
+                num_commands++;
+            }
+            // Handle piping with output redirection
+            handle_piping(commands, num_commands, output_file);
+            return;
+        } else {
+            handle_output_redirection(commands, output_file);
+            return;
         }
-        handle_piping(commands, num_commands, NULL);
-        return;
     }
 
+    // // Handle piping
+    // if (pipe_start) {
+    //     split(line, commands, '|');
+    //     int num_commands = 0;
+    //     while (commands[num_commands] != NULL) {
+    //         num_commands++;
+    //     }
+    //     // Handle piping (no redirection)
+    //     handle_piping(commands, num_commands, NULL);
+    //     return;
+    // }
+
+    // If no redirection or piping, split and execute the command normally
     split(line, commands, ' ');
 
+    // Execute the command normally
     int child_pid = fork();
     if (child_pid == 0) {
         execute_command(commands[0], commands);
@@ -140,3 +171,4 @@ void handle_command(char* line) {
         printf("Background process started\n");
     }
 }
+

@@ -13,9 +13,9 @@ void add_character_to_string(char* str, char c) {
     }
 }
 
-void split(char* cmd, char* words[], char delimiter) {
+void split(char* command, char* words[], char delimiter) {
     int word_count = 0;
-    char* next_char = cmd;
+    char* next_char = command;
     char current_word[1000] = "";
 
     while (*next_char != '\0') {
@@ -40,7 +40,8 @@ void split(char* cmd, char* words[], char delimiter) {
     words[word_count] = NULL;
 }
 
-bool find_absolute_path(char* cmd, char* absolute_path) {
+
+bool find_absolute_path(char* command, char* absolute_path) {
     char* directories[1000];
     split(getenv("PATH"), directories, ':');
 
@@ -48,7 +49,7 @@ bool find_absolute_path(char* cmd, char* absolute_path) {
         char path[1000];
         strcpy(path, directories[ix]);
         add_character_to_string(path, '/');
-        strcat(path, cmd);
+        strcat(path, command);
 
         if (access(path, X_OK) == 0) {
             strcpy(absolute_path, path);
@@ -58,13 +59,14 @@ bool find_absolute_path(char* cmd, char* absolute_path) {
     return false;
 }
 
-void execute_command(char* cmd, char* args[]) {
+void execute_command(char* command, char* arguments[]) {
     char absolute_path[1000];
-    if (!find_absolute_path(cmd, absolute_path)) {
-        fprintf(stderr, "Command '%s' not found\n", cmd);
+    if (!find_absolute_path(command, absolute_path)) {
+        fprintf(stderr, "Command '%s' not found\n", command);
         exit(1);
     }
-    execve(absolute_path, args, NULL);
+    execve(absolute_path, arguments, NULL);
+
     fprintf(stderr, "Failed to execute %s\n", absolute_path);
     exit(1);
 }
