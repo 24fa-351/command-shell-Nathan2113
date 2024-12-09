@@ -12,9 +12,15 @@
 #define WRITE_SIDE 1
 
 void add_character_to_string(char* str, char c) {
+    // int len = strlen(str);
+    // str[len] = c;
+    // str[len + 1] = '\0';
+
     int len = strlen(str);
-    str[len] = c;
-    str[len + 1] = '\0';
+    if (len < MAX_LINE - 1) { // Prevent buffer overflow
+        str[len] = c;
+        str[len + 1] = '\0';
+    }
 }
 
 void split(char* cmd, char* words[], char delimiter) {
@@ -126,14 +132,12 @@ void handle_input_redirection(char* command, char* input_file) {
     }
 
     if (pid == 0) {
-        // Redirect stdin to the input file
         if (dup2(input_fd, STDIN_FILENO) == -1) {
             perror("dup2");
             exit(1);
         }
         close(input_fd);
 
-        // Split the command into words and execute it
         char* words[1000];
         split(command, words, ' ');
         execute_command(words[0], words);
@@ -152,32 +156,6 @@ void handle_input_redirection(char* command, char* input_file) {
     // Wait for the child process to finish
     wait(NULL);
 }
-
-// void handle_input_redirection(char* line) {
-//     // Check for input redirection '<'
-//     char* input_file = NULL;
-//     if (strstr(line, " < ")) {
-//         char* token = strtok(line, " < ");
-//         input_file = strtok(NULL, " < ");
-//         // Remove any extra spaces around the input file name
-//         while (*input_file == ' ') input_file++;
-//         line[strlen(line) - strlen(input_file) - 3] = '\0'; // Remove '<' and the file name
-
-//         // Open the input file
-//         int input_fd = open(input_file, O_RDONLY);
-//         if (input_fd == -1) {
-//             perror("Failed to open input file");
-//             exit(1);
-//         }
-
-//         // Redirect stdin to the input file
-//         if (dup2(input_fd, STDIN_FILENO) == -1) {
-//             perror("Failed to redirect stdin");
-//             exit(1);
-//         }
-//         close(input_fd);
-//     }
-// }
 
 void handle_piping(char* commands[], int num_commands) {
     int pipe_fds[2 * (num_commands - 1)];
@@ -382,14 +360,16 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        // Free allocated memory for commands and words
-        for (int i = 0; commands[i] != NULL; i++) {
-            free(commands[i]);
-        }
+        // // Free allocated memory for commands and words
+        // for (int i = 0; commands[i] != NULL; i++) {
+        //     free(commands[i]);
+        // }
 
         if (background) {
             printf("Background process started\n");
         }
+
+        printf("\n");
     }
 
     return 0;
