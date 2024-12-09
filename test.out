@@ -1,8 +1,0 @@
-total 28
--rw-r--r-- 1 nathan nathan   157 Dec  8 12:50 main.c
--rwxr-xr-x 1 nathan nathan 16368 Dec  8 13:33 redirect
--rw-r--r-- 1 nathan nathan  1191 Dec  8 13:33 redirect.c
--rw-r--r-- 1 nathan nathan     0 Dec  8 12:50 redirect.h
--rw-r--r-- 1 nathan nathan     0 Dec  8 12:51 shell_commands.c
--rw-r--r-- 1 nathan nathan    23 Dec  8 12:51 shell_commands.h
--rw------- 1 nathan nathan     0 Dec  8 13:33 test.out
