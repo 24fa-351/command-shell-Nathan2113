@@ -1,8 +1,12 @@
 #include "command_handler.h"
+#include "io_operations.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
+#include <sys/wait.h>
 
 void handle_cd(char* path) {
     if (path == NULL || strcmp(path, "") == 0) {
