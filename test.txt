@@ -1,5 +1,5 @@
-total 28
+total 48
 -rw-r--r-- 1 nathan nathan     5 Dec  8 17:19 sample_input.txt
--rwxr-xr-x 1 nathan nathan 21880 Dec  8 18:11 shell
--rw-r--r-- 1 nathan nathan     0 Dec  8 18:12 shell.c
--rw------- 1 nathan nathan     0 Dec  8 18:13 test.txt
+-rwxr-xr-x 1 nathan nathan 21880 Dec  8 18:15 shell
+-rw-r--r-- 1 nathan nathan 18796 Dec  8 18:15 shell.c
+-rw------- 1 nathan nathan     0 Dec  8 18:15 test.txt
