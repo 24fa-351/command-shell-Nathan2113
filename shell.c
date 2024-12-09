@@ -82,40 +82,6 @@ void execute_command(char* cmd, char* args[]) {
     exit(1);
 }
 
-// void handle_output_redirection(char* command, char* output_file) {
-//     int output_fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-//     if (output_fd == -1) {
-//         perror("open");
-//         exit(1);
-//     }
-
-//     int pid = fork();
-//     if (pid == -1) {
-//         perror("fork");
-//         exit(1);
-//     }
-
-//     if (pid == 0) {
-//         if (dup2(output_fd, STDOUT_FILENO) == -1) {
-//             perror("dup2");
-//             exit(1);
-//         }
-//         close(output_fd);
-
-//         char* words[1000];
-//         split(command, words, ' ');
-//         execute_command(words[0], words);
-
-//         // Free allocated memory for words
-//         for (int i = 0; words[i] != NULL; i++) {
-//             free(words[i]);
-//         }
-//     }
-
-//     close(output_fd);
-//     wait(NULL);
-// }
-
 void handle_output_redirection(char* line) {
     // Find the location of the " > " operator in the line
     char* output_file = strstr(line, " > ");
@@ -285,67 +251,23 @@ void handle_piping(char* commands[], int num_commands, char* output_file) {
     }
 }
 
-
-// void handle_piping(char* commands[], int num_commands) {
-//     int pipe_fds[2 * (num_commands - 1)];
-//     for (int i = 0; i < num_commands - 1; i++) {
-//         if (pipe(pipe_fds + i * 2) == -1) {
-//             perror("pipe");
-//             exit(1);
-//         }
-//     }
-
-//     for (int i = 0; i < num_commands; i++) {
-//         int pid = fork();
-//         if (pid == -1) {
-//             perror("fork");
-//             exit(1);
-//         }
-
-//         if (pid == 0) {
-//             if (i > 0) {
-//                 if (dup2(pipe_fds[(i - 1) * 2], STDIN_FILENO) == -1) {
-//                     perror("dup2");
-//                     exit(1);
-//                 }
-//             }
-
-//             if (i < num_commands - 1) {
-//                 if (dup2(pipe_fds[i * 2 + 1], STDOUT_FILENO) == -1) {
-//                     perror("dup2");
-//                     exit(1);
-//                 }
-//             }
-
-//             for (int j = 0; j < 2 * (num_commands - 1); j++) {
-//                 close(pipe_fds[j]);
-//             }
-
-//             char* words[1000];
-//             split(commands[i], words, ' ');
-
-//             execute_command(words[0], words);
-
-//             // Free allocated memory for words
-//             for (int k = 0; words[k] != NULL; k++) {
-//                 free(words[k]);
-//             }
-//         }
-//     }
-
-//     for (int ix = 0; ix < 2 * (num_commands - 1); ix++) {
-//         close(pipe_fds[ix]);
-//     }
-
-//     for (int i = 0; i < num_commands; i++) {
-//         wait(NULL);
-//     }
-// }
-
 // Handle cd command
 void handle_cd(char* path) {
-    if (chdir(path) != 0) {
-        perror("cd");
+    // If no argument is provided, change to the home directory
+    if (path == NULL || strcmp(path, "") == 0) {
+        char* home_dir = getenv("HOME");
+        if (home_dir != NULL) {
+            if (chdir(home_dir) != 0) {
+                perror("cd");
+            }
+        } else {
+            fprintf(stderr, "cd: HOME not set\n");
+        }
+    } else {
+        // Change to the specified directory (absolute or relative path)
+        if (chdir(path) != 0) {
+            perror("cd");
+        }
     }
 }
 
@@ -433,6 +355,13 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // Check if the command is 'cd'
+        if (strncmp(line, "cd ", 3) == 0) {
+            char* path = line + 3;  // Get the directory after 'cd '
+            handle_cd(path);         // Call handle_cd with the path
+            continue;  // Skip the rest of the command handling
+        }
+
         // Handle background execution with '&'
         int background = 0;
         if (line[strlen(line) - 1] == '&') {
@@ -512,120 +441,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
-
-// int main(int argc, char *argv[]) {
-//     char line[MAX_LINE];
-//     while (1) {
-//         printf("xsh> ");
-//         if (fgets(line, MAX_LINE, stdin) == NULL) {
-//             break;
-//         }
-//         if (!strcmp(line, "exit\n") || !strcmp(line, "quit\n")) {
-//             break;
-//         }
-
-//         line[strcspn(line, "\n")] = 0; // Remove newline character
-
-//         // Handle setting environment variables
-//         if (strncmp(line, "set ", 4) == 0) {
-//             char* var_name = line + 4;
-//             char* var_value = strchr(var_name, ' ');
-//             if (var_value != NULL) {
-//                 *var_value = '\0';  // Split the variable name and value
-//                 var_value++;        // Skip the space
-//                 setenv(var_name, var_value, 1);  // Set the environment variable
-//                 printf("%s=%s\n", var_name, var_value);
-//             }
-//             continue;
-//         }
-
-//         // Handle unsetting environment variables
-//         if (strncmp(line, "unset ", 6) == 0) {
-//             char* var_name = line + 6;
-//             unsetenv(var_name);  // Unset the environment variable
-//             continue;
-//         }
-
-//         // Handle background execution with '&'
-//         int background = 0;
-//         if (line[strlen(line) - 1] == '&') {
-//             background = 1;
-//             line[strlen(line) - 1] = '\0';  // Remove the '&' at the end
-//         }
-
-//         // Expand variables (like $FOO) before executing the command
-//         expand_variables(line);
-
-//         char* commands[1000];
-
-//         // Handle input redirection
-//         if (strstr(line, " < ")) {
-//             char* token = strtok(line, " < ");
-//             commands[0] = token;
-//             token = strtok(NULL, " < ");
-//             if (token != NULL) {
-//                 char* input_file = token;
-
-//                 // Remove any extra spaces around the input file name
-//                 while (*input_file == ' ') input_file++;
-
-//                 handle_input_redirection(commands[0], input_file);
-//             }
-//             printf("\n");
-//             continue;
-//         } 
-//         // Handle output redirection
-//         else if (strstr(line, " > ")) {
-//             // char* token = strtok(line, " > ");
-//             // commands[0] = token;
-//             // token = strtok(NULL, " > ");
-//             // if (token != NULL) {
-//             //     char* output_file = token;
-
-//             //     // Remove any extra spaces around the output file name
-//             //     while (*output_file == ' ') output_file++;
-
-//                 // handle_output_redirection(commands[0], output_file);
-//             handle_output_redirection(line);
-//             printf("\n");
-//             continue;
-//             }
-          
-//         else {
-//             split(line, commands, '|');
-
-//             int num_commands = 0;
-//             while (commands[num_commands] != NULL) {
-//                 num_commands++;
-//             }
-
-//             if (num_commands > 1) {
-//                 handle_piping(commands, num_commands);
-//             } else {
-//                 char* words[1000];
-//                 split(line, words, ' ');
-//                 int child_pid = fork();
-//                 if (child_pid == 0) {
-//                     execute_command(words[0], words);
-//                 }
-
-//                 // If it's not a background command, wait for the child to finish
-//                 if (!background) {
-//                     wait(NULL);
-//                 }
-//             }
-//         }
-
-//         // // Free allocated memory for commands and words
-//         // for (int i = 0; commands[i] != NULL; i++) {
-//         //     free(commands[i]);
-//         // }
-
-//         if (background) {
-//             printf("Background process started\n");
-//         }
-//     }
-
-//     return 0;
-// }
