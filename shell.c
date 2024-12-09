@@ -232,15 +232,13 @@ void expand_variables(char* command) {
             // Get the value of the variable
             char* var_value = getenv(var_name);
             if (var_value != NULL) {
+                // If variable is found, expand it
                 while (*var_value != '\0') {
                     expanded[j++] = *var_value++;
                 }
             } else {
-                // If variable is not found, just append nothing
-                expanded[j++] = '$';
-                for (int k = 0; k < var_len; k++) {
-                    expanded[j++] = var_name[k];
-                }
+                // If the variable is not found, do not add anything
+                // This effectively removes the $FOO from the command
             }
         } else {
             expanded[j++] = command[i++];
@@ -249,7 +247,6 @@ void expand_variables(char* command) {
     expanded[j] = '\0';
     strcpy(command, expanded);  // Copy expanded result back to command
 }
-
 
 int main(int argc, char *argv[]) {
     char line[MAX_LINE];
@@ -264,34 +261,40 @@ int main(int argc, char *argv[]) {
 
         line[strcspn(line, "\n")] = 0; // Remove newline character
 
+        // Handle setting environment variables
+        if (strncmp(line, "set ", 4) == 0) {
+            char* var_name = line + 4;
+            char* var_value = strchr(var_name, ' ');
+            if (var_value != NULL) {
+                *var_value = '\0';  // Split the variable name and value
+                var_value++;        // Skip the space
+                setenv(var_name, var_value, 1);  // Set the environment variable
+                printf("%s=%s\n", var_name, var_value);
+            }
+            continue;
+        }
+
+        // Handle unsetting environment variables
+        if (strncmp(line, "unset ", 6) == 0) {
+            char* var_name = line + 6;
+            unsetenv(var_name);  // Unset the environment variable
+            continue;
+        }
+
+        // Handle background execution with '&'
+        int background = 0;
+        if (line[strlen(line) - 1] == '&') {
+            background = 1;
+            line[strlen(line) - 1] = '\0';  // Remove the '&' at the end
+        }
+
+        // Expand variables (like $FOO) before executing the command
+        expand_variables(line);
+
         char* commands[1000];
 
-        // Check for cd command
-        char* words[1000];
-        split(line, words, ' ');
-
-        if (strcmp(words[0], "set") == 0) {
-            if (words[1] == NULL || words[2] == NULL) {
-                fprintf(stderr, "set: expected variable and value\n");
-            } else {
-                handle_set(words[1], words[2]);
-            }
-        } else if (strcmp(words[0], "unset") == 0) {
-            if (words[1] == NULL) {
-                fprintf(stderr, "unset: expected variable\n");
-            } else {
-                handle_unset(words[1]);
-            }
-        } 
-        else if (strcmp(words[0], "cd") == 0) {
-            if (words[1] == NULL) {
-                fprintf(stderr, "cd: expected argument\n");
-            } else {
-                handle_cd(words[1]);
-            }
-        }
         // Check for output redirection '>'
-        else if (strstr(line, " > ")) {
+        if (strstr(line, " > ")) {
             char* token = strtok(line, " > ");
             commands[0] = token;
             token = strtok(NULL, " > ");
@@ -318,15 +321,105 @@ int main(int argc, char *argv[]) {
                 if (child_pid == 0) {
                     execute_command(words[0], words);
                 }
-                wait(NULL);
+
+                // If it's not a background command, wait for the child to finish
+                if (!background) {
+                    wait(NULL);
+                }
             }
         }
 
-        // Free allocated memory only after the command is executed and all child processes are done
+        // Free allocated memory for commands and words
         for (int i = 0; commands[i] != NULL; i++) {
-            free(commands[i]);  // Free the memory for each command part
+            free(commands[i]);
+        }
+
+        if (background) {
+            printf("Background process started\n");
         }
     }
 
     return 0;
 }
+
+
+
+// int main(int argc, char *argv[]) {
+//     char line[MAX_LINE];
+//     while (1) {
+//         printf("xsh> ");
+//         if (fgets(line, MAX_LINE, stdin) == NULL) {
+//             break;
+//         }
+//         if (!strcmp(line, "exit\n") || !strcmp(line, "quit\n")) {
+//             break;
+//         }
+
+//         line[strcspn(line, "\n")] = 0; // Remove newline character
+
+//         char* commands[1000];
+
+//         // Check for cd command
+//         char* words[1000];
+//         split(line, words, ' ');
+
+//         if (strcmp(words[0], "set", 4) == 0) {
+//             if (words[1] == NULL || words[2] == NULL) {
+//                 fprintf(stderr, "set: expected variable and value\n");
+//             } else {
+//                 handle_set(words[1], words[2]);
+//             }
+//         } else if (strcmp(words[0], "unset") == 0) {
+//             if (words[1] == NULL) {
+//                 fprintf(stderr, "unset: expected variable\n");
+//             } else {
+//                 handle_unset(words[1]);
+//             }
+//         } 
+//         else if (strcmp(words[0], "cd") == 0) {
+//             if (words[1] == NULL) {
+//                 fprintf(stderr, "cd: expected argument\n");
+//             } else {
+//                 handle_cd(words[1]);
+//             }
+//         }
+//         // Check for output redirection '>'
+//         else if (strstr(line, " > ")) {
+//             char* token = strtok(line, " > ");
+//             commands[0] = token;
+//             token = strtok(NULL, " > ");
+//             char* output_file = token;
+
+//             // Remove any extra spaces around the output file name
+//             while (*output_file == ' ') output_file++;
+
+//             handle_redirection(commands[0], output_file);
+//         } else {
+//             split(line, commands, '|');
+
+//             int num_commands = 0;
+//             while (commands[num_commands] != NULL) {
+//                 num_commands++;
+//             }
+
+//             if (num_commands > 1) {
+//                 handle_piping(commands, num_commands);
+//             } else {
+//                 char* words[1000];
+//                 split(line, words, ' ');
+//                 int child_pid = fork();
+//                 if (child_pid == 0) {
+//                     execute_command(words[0], words);
+//                 }
+//                 wait(NULL);
+//             }
+//         }
+
+//         // Free allocated memory only after the command is executed and all child processes are done
+//         for (int i = 0; commands[i] != NULL; i++) {
+//             free(commands[i]);  // Free the memory for each command part
+//         }
+//     }
+
+//     return 0;
+// }
